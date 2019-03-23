@@ -37,7 +37,9 @@
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
-
+//--QuadcopterAR--
+#include <fstream>
+//--QuadcopterAR--
 #include <mutex>
 
 namespace ORB_SLAM2

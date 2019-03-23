@@ -22,9 +22,9 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#include<string>
-#include<thread>
-#include<opencv2/core/core.hpp>
+#include <string>
+#include <thread>
+#include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -35,6 +35,10 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+//--QuadcopterAR--
+#include "ChessBoardDetector.h"
+#include <cmath>
+//--QuadcopterAR--
 
 #include "BoostArchiver.h"
 // for map file io
@@ -121,6 +125,9 @@ public:
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
+    //--QuadcopterAR--
+    MapDrawer* mpMapDrawer;
+    //--QuadcopterAR--
 private:
     // Save/Load functions
     void SaveMap(const string &filename);
@@ -159,7 +166,7 @@ private:
     Viewer* mpViewer;
 
     FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    // MapDrawer* mpMapDrawer;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
@@ -181,6 +188,11 @@ private:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+//--QuadcopterAR--
+public:
+    // Stores real world scale
+    float real_world_scale;
+//--QuadcopterAR--
 };
 
 }// namespace ORB_SLAM

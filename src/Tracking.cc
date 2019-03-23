@@ -256,7 +256,13 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     }
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    {
+        // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+        //--QuadcopterAR--
+        // For initialization, we call a different Frame Constructor with an additional bool isinitialization parameter
+        mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, true);
+        //--QuadcopterAR--
+    }
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
 
@@ -736,6 +742,90 @@ void Tracking::CreateInitialMapMonocular()
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
     mState=OK;
+
+    //--QuadcopterAR--
+    std::cout << "Should have saved images here!" << std::endl;
+
+    // Should save Frame object instead of just saving
+    // mpCBDetector, since we need ORB_SLAM's pose information
+    // Reference and 2nd frame are finalized here. 
+    // Accssing image in these two frames now.
+    if(mInitialFrame.mpCBDetector != NULL)
+    {
+        mInitialFrame.mpCBDetector->setFrameObjectPose(pKFini->GetPose());
+        // Storing image as png : 
+        cv::Mat ref_frame_image = mInitialFrame.mpCBDetector->getImage();
+        vector<int> compression_params;
+        compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+        compression_params.push_back(9);
+
+        try {
+            imwrite("ref_frame_image.png", ref_frame_image, compression_params);
+            std::cout << "ref_frame_image saved!" << std::endl;
+        }
+        catch (runtime_error& ex) {
+            fprintf(stderr, "Exception converting image to PNG format for ref_frame_image: %s\n", ex.what());
+        }
+
+        // Storing object of ChessBoardDetector in a binary file : 
+        std::ofstream out("ReferenceFrameCBD", std::ios_base::binary);
+        if (!out)
+        {
+            cerr << "Cannot Write to file: " << std::endl;
+            exit(-1);
+        }
+        boost::archive::binary_oarchive oa(out, boost::archive::no_header);
+        oa << *mInitialFrame.mpCBDetector;
+        out.close();
+
+        // std::ofstream out2("ReferenceFrameObj", std::ios_base::binary);
+        // if (!out2)
+        // {
+        //     cerr << "Cannot Write to file: " << std::endl;
+        //     exit(-1);
+        // }
+        // boost::archive::binary_oarchive oa2(out2, boost::archive::no_header);
+        // oa2 << mInitialFrame;
+        // out2.close();
+    }
+    if(mCurrentFrame.mpCBDetector != NULL)
+    {
+        mCurrentFrame.mpCBDetector->setFrameObjectPose(pKFcur->GetPose());
+        // Storing image as png : 
+        cv::Mat sec_frame_image = mCurrentFrame.mpCBDetector->getImage();
+        vector<int> compression_params;
+        compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+        compression_params.push_back(9);
+
+        try {
+            imwrite("sec_frame_image.png", sec_frame_image, compression_params);
+            std::cout << "sec_frame_image saved!" << std::endl;
+        }
+        catch (runtime_error& ex) {
+            fprintf(stderr, "Exception converting image to PNG format for sec_frame_image: %s\n", ex.what());
+        }
+        // Storing object of ChessBoardDetector in a binary file : 
+        std::ofstream out("CurrentFrameCBD", std::ios_base::binary);
+        if (!out)
+        {
+            cerr << "Cannot Write to file: " << std::endl;
+            exit(-1);
+        }
+        boost::archive::binary_oarchive oa(out, boost::archive::no_header);
+        oa << *mCurrentFrame.mpCBDetector;
+        out.close();
+
+        // std::ofstream out2("CurrentFrameObj", std::ios_base::binary);
+        // if (!out2)
+        // {
+        //     cerr << "Cannot Write to file: " << std::endl;
+        //     exit(-1);
+        // }
+        // boost::archive::binary_oarchive oa2(out2, boost::archive::no_header);
+        // oa2 << mCurrentFrame;
+        // out2.close();
+    }
+    //--QuadcopterAR--
 }
 
 void Tracking::CheckReplacedInLastFrame()
